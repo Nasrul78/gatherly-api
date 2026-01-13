@@ -44,31 +44,66 @@ it('can register a new user', function () {
   assertEquals('Test User', $user->name);
 });
 
-it('requires valid registration data', function () {
-  // Test missing name
+it('requires name for registration', function () {
   postJson('/api/v1/auth/register', [
     'email' => 'test@example.com',
     'password' => 'password123',
     'password_confirmation' => 'password123',
   ])->assertUnprocessable();
+});
 
-  // Test invalid email
+it('requires email for registration', function () {
+  postJson('/api/v1/auth/register', [
+    'name' => 'Test User',
+    'password' => 'password123',
+    'password_confirmation' => 'password123',
+  ])->assertUnprocessable();
+});
+
+it('requires password for registration', function () {
+  postJson('/api/v1/auth/register', [
+    'name' => 'Test User',
+    'email' => 'test@example.com',
+    'password_confirmation' => 'password123',
+  ])->assertUnprocessable();
+});
+
+it('requires password confirmation for registration', function () {
+  postJson('/api/v1/auth/register', [
+    'name' => 'Test User',
+    'email' => 'test@example.com',
+    'password' => 'password123',
+  ])->assertUnprocessable();
+});
+
+it('requires valid email format for registration', function () {
   postJson('/api/v1/auth/register', [
     'name' => 'Test User',
     'email' => 'invalid-email',
     'password' => 'password123',
     'password_confirmation' => 'password123',
   ])->assertUnprocessable();
+});
 
-  // Test short password
+it('requires minimum name length for registration', function () {
+  postJson('/api/v1/auth/register', [
+    'name' => 'ab',
+    'email' => 'test@example.com',
+    'password' => 'password123',
+    'password_confirmation' => 'password123',
+  ])->assertUnprocessable();
+});
+
+it('requires minimum password length for registration', function () {
   postJson('/api/v1/auth/register', [
     'name' => 'Test User',
     'email' => 'test@example.com',
     'password' => '123',
     'password_confirmation' => '123',
   ])->assertUnprocessable();
+});
 
-  // Test password mismatch
+it('requires matching password confirmation for registration', function () {
   postJson('/api/v1/auth/register', [
     'name' => 'Test User',
     'email' => 'test@example.com',
