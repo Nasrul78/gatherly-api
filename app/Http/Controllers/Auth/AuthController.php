@@ -10,6 +10,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
@@ -23,7 +24,7 @@ class AuthController extends Controller
             'user' => UserResource::make($result->user),
             'token' => $result->token,
             'token_type' => 'Bearer'
-        ]);
+        ], Response::HTTP_CREATED);
     }
 
     public function login(LoginRequest $request, LoginUser $action): JsonResponse
@@ -35,7 +36,7 @@ class AuthController extends Controller
             'user' => UserResource::make($result->user),
             'token' => $result->token,
             'token_type' => 'Bearer'
-        ]);
+        ], Response::HTTP_OK);
     }
 
     public function logout(#[CurrentUser] $user): JsonResponse
@@ -58,6 +59,6 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Successfully logged out.'
-        ]);
+        ], Response::HTTP_OK);
     }
 }
