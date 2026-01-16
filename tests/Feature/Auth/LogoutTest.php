@@ -59,3 +59,31 @@ it('can logout multiple users from the same account', function () {
   $user->refresh();
   expect($user->tokens()->count())->toBe(0);
 });
+
+it('is throttled after 20 logout attempts per minute', function () {
+  $user = User::factory()->create();
+
+  // Create 20 tokens for testing
+  $tokens = [];
+  for ($i = 0; $i < 20; $i++) {
+    $tokens[] = $user->createToken("test-token-{$i}")->plainTextToken;
+  }
+
+  // Make 20 successful logout requests (should all pass)
+  foreach ($tokens as $token) {
+    postJson('/api/v1/auth/logout', [], [
+      'Authorization' => 'Bearer ' . $token
+    ])->assertOk();
+  }
+
+  // Create one more token for the 21st request
+  $extraToken = $user->createToken('extra-token')->plainTextToken;
+
+  // 21st request should be throttled
+  postJson('/api/v1/auth/logout', [], [
+    'Authorization' => 'Bearer ' . $extraToken
+  ])->assertStatus(429)
+    ->assertJson([
+      'message' => 'Too Many Attempts.'
+    ]);
+});

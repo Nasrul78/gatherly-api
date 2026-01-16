@@ -33,6 +33,20 @@ it('can login with valid credentials', function () {
     ]);
 });
 
+it('cannot login when authenticated', function () {
+  $user = User::factory()->create([
+    'password' => bcrypt('password')
+  ]);
+  $token = $user->createToken('test-token')->plainTextToken;
+
+  postJson('/api/v1/auth/login', [
+    'email' => $user->email,
+    'password' => 'password',
+  ], [
+    'Authorization' => 'Bearer ' . $token
+  ])->assertForbidden();
+});
+
 it('cannot login with wrong password', function () {
   $user = User::factory()->create([
     'password' => 'correctpassword',
@@ -101,4 +115,27 @@ it('creates new token on each login', function () {
 
   expect($token1)->not->toBe($token2);
   expect($user->tokens()->count())->toBe(2);
+});
+
+it('is throttled after 10 login attempts per minute', function () {
+  $user = User::factory()->create([
+    'password' => 'password123',
+  ]);
+
+  $loginData = [
+    'email' => $user->email,
+    'password' => 'password123',
+  ];
+
+  // Make 10 successful requests (should all pass)
+  for ($i = 0; $i < 10; $i++) {
+    postJson('/api/v1/auth/login', $loginData)->assertOk();
+  }
+
+  // 11th request should be throttled
+  postJson('/api/v1/auth/login', $loginData)
+    ->assertStatus(429)
+    ->assertJson([
+      'message' => 'Too Many Attempts.'
+    ]);
 });
